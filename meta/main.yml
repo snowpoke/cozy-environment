@@ -1,7 +1,8 @@
 galaxy_info:
-  role_name: cozy-environment
+  role_name: cozy_environment
   author: snowpoke
   description: Sets up `fish` as default shell and aliases utilities that I prefer over their standard unix counterparts. (like ls -> lsd, top -> bpytop, etc. ) See `defaults` folder for variables you can use for customization.
+  company: none
 
   # If the issue tracker for your role is not on github, uncomment the
   # next line and provide a value
@@ -14,9 +15,9 @@ galaxy_info:
   # - GPL-3.0-only
   # - Apache-2.0
   # - CC-BY-4.0
-  license: license (GPL-2.0-or-later, MIT, etc)
+  license: BSD-3-Clause
 
-  min_ansible_version: 2.1
+  min_ansible_version: "2.1"
 
   # If this a Container Enabled role, provide the minimum Ansible Container version.
   # min_ansible_container_version:
@@ -30,8 +31,8 @@ galaxy_info:
   platforms:
     - name: Debian
       versions:
-        - 10
-        - 9
+        - buster # Debian 10
+        - stretch # Debian 9
   # - name: SomePlatform
   #   versions:
   #   - all

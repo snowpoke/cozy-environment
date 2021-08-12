@@ -1,9 +1,9 @@
 ---
 # tasks file for cozy-environment
-- name: Install `psutil` requirement
-  pip:
-    name: psutil
-    state: present
+# - name: Install `psutil` requirement
+#   pip:
+#     name: psutil
+#     state: present
 
 - name: Install `bpytop` resource viewer
   pip:
@@ -15,22 +15,43 @@
   ansible.builtin.template:
     src: templates/bpytop.conf.j2
     dest: /etc/bpytop.conf
+    mode: u=rw,g=r,o=r
+
+- name: Download `micro` installer
+  get_url:
+    url: https://getmic.ro
+    dest: /tmp/micro-installer.sh
+    mode: u=rx,g=r,o=r
 
 - name: Install `micro` text editor
-  ansible.builtin.shell:
-    cmd: curl https://getmic.ro | bash && mkdir ~/.config/micro
+  ansible.builtin.command:
+    cmd: /tmp/micro-installer.sh
     chdir: ~/.local/bin
-    creates: ~/.config/micro
+    creates: ~/.local/bin/micro
+
+- name: Ensure that `micro` config directory exists
+  ansible.builtin.file:
+    path: ~/.config/micro
+    state: directory
+    mode: u=rwx,g=rx,o=rx
 
 - name: Copy `micro` config file
   ansible.builtin.template:
     src: templates/settings.json.j2
     dest: ~/.config/micro/settings.json
+    mode: u=rw,g=r,o=r
+
+- name: Download `rust-lang` installer
+  get_url:
+    url: https://sh.rustup.rs
+    dest: /tmp/rust-installer.sh
+    mode: u=rx,g=r,o=r
 
 - name: Install `cargo`, but only if rust hasn't been installed yet
-  ansible.builtin.shell:
-    cmd: curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --profile minimal && touch ~/.cargo/temp_installation_marker
+  ansible.builtin.command:
+    cmd: /tmp/rust-installer.sh -y --no-modify-path --profile minimal
     creates: ~/.cargo/bin/cargo
+  register: cargo_temp_install
 
 - name: Install `lsd` file viewer
   ansible.builtin.shell:
@@ -39,18 +60,18 @@
 
 - name: Install `bat` text viewer
   ansible.builtin.shell:
-    cmd: curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --profile minimal && ~/.cargo/bin/cargo install bat --root ~/.cargo && mv ~/.cargo/bin/bat ~/.local/bin/bat && ~/.cargo/bin/rustup self uninstall -y
+    cmd: ~/.cargo/bin/cargo install bat --root ~/.cargo && mv ~/.cargo/bin/bat ~/.local/bin/bat
     creates: ~/.local/bin/bat
 
 - name: Install `fd` file viewer
   ansible.builtin.shell:
-    cmd: curl https://sh.rustup.rs -sSf | sh -s -- -y --no-modify-path --profile minimal && ~/.cargo/bin/cargo install fd-find --root ~/.cargo && mv ~/.cargo/bin/fd ~/.local/bin/fd-find && ~/.cargo/bin/rustup self uninstall -y
+    cmd: ~/.cargo/bin/cargo install fd-find --root ~/.cargo && mv ~/.cargo/bin/fd ~/.local/bin/fd-find
     creates: ~/.local/bin/fd-find
 
 - name: If `cargo` was installed above, we can remove it now
-  ansible.builtin.shell:
+  when: cargo_temp_install is success
+  ansible.builtin.command:
     cmd: ~/.cargo/bin/rustup self uninstall -y
-    removes: ~/.cargo/temp_installation_marker
 
 - name: Add key for `fish` repository (Debian 9)
   become: yes
@@ -88,34 +109,53 @@
     repo: deb http://download.opensuse.org/repositories/shells:/fish:/release:/3/Debian_10/ /
     state: present
 
-- name: Ensure that `fish` is on the latest version
+- name: Ensure that `fish` is installed
   become: yes
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name: fish
-    state: latest
+    state: present
+    update_cache: yes
+
+- name: Ensure that `fish` config directory exists
+  ansible.builtin.file:
+    path: ~/.config/fish
+    state: directory
+    mode: u=rwx,g=rx,o=rx
 
 - name: Copy `fish` config file
   ansible.builtin.template:
     src: templates/config.fish.j2
     dest: ~/.config/fish/config.fish
+    mode: u=rw,g=r,o=r
+
+- name: Download `fisher` installer
+  get_url:
+    url: https://git.io/fisher
+    dest: /tmp/fisher-installer.fish
+    mode: u=rwx,g=r,o=r
 
 - name: Install `fisher` package manager
   ansible.builtin.shell:
-    cmd: curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher
+    cmd: source /tmp/fisher-installer.fish && fisher install jorgebucaran/fisher
     creates: ~/.config/fish/functions/fisher.fish
     executable: /bin/fish
 
-- name: Install `oh-my-fish` tool
-  ansible.builtin.shell:
-    cmd: curl -L https://get.oh-my.fish | fish
-    creates: ~/.config/omf
-    executable: /bin/fish
+- name: Download `oh-my-fish` installer
+  get_url:
+    url: https://get.oh-my.fish
+    dest: /tmp/omf-installer.fish
+    mode: u=rwx,g=r,o=r
 
+- name: Install `oh-my-fish` tool
+  ansible.builtin.command:
+    cmd: /tmp/omf-installer.fish -y --noninteractive
+    creates: ~/.config/omf
+
+# noqa
 - name: Install `z.fish` plugin for fish
-  ansible.builtin.shell:
-    cmd: fisher install jethrokuan/z
+  ansible.builtin.command:
+    cmd: fish -c "fisher install jethrokuan/z"
     creates: ~/.config/fish/functions/__z.fish
-    executable: /bin/fish
 
 - name: Install `bobthefish` theme for fish
   ansible.builtin.shell:
