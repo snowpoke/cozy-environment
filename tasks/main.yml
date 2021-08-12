@@ -23,6 +23,12 @@
     dest: /tmp/micro-installer.sh
     mode: u=rx,g=r,o=r
 
+- name: Ensure that `~/.local/bin` directory exists
+  ansible.builtin.file:
+    path: ~/.local/bin
+    state: directory
+    mode: u=rwx,g=rx,o=rx
+
 - name: Install `micro` text editor
   ansible.builtin.command:
     cmd: /tmp/micro-installer.sh
