@@ -1,0 +1,9 @@
+---
+# defaults file for cozy-environment
+# choose themes for installed utilities
+util_themes:
+  bpytop: nord
+  fish: bobthefish
+  fish_subtheme: nord
+  bat: nord
+  micro: gruvbox
