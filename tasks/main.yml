@@ -169,13 +169,14 @@
     creates: ~/.local/share/omf/themes/bobthefish
     executable: /bin/fish
 
-- name: Store local user ID in variable
+- name: Store local user name as fact
   become: no
-  set_fact:
-    local_user_id: "{{ ansible_user_id }}"
+  ansible.builtin.command:
+    cmd: whoami
+  register: local_whoami
 
 - name: Change user shell to `fish`
   become: yes
   user:
-    name: "{{ local_user_id }}"
+    name: "{{ local_whoami.stdout }}"
     shell: /bin/fish
